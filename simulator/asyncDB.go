@@ -127,7 +127,7 @@ func (a AsyncDBSimulator) ValidateAvailability() error {
 		return err
 	}
 	// Get SKU Records
-	if err := a.rw.ReadN("StockKeeingUnits", a.config.OrderItemsCnt); err != nil {
+	if err := a.rw.ReadN("StockKeepingUnits", a.config.OrderItemsCnt); err != nil {
 		return err
 	}
 	if RandomChance(3) {
