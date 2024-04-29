@@ -22,10 +22,15 @@
    This will run the benchmark for 5 seconds, using 8 CPUs, with no timeout and memory allocation statistics, it will also output the results to a file called outputFile.txt.
 
 ## Running docker image
+1. Locate to the root of the project
+2. Build and run the docker image
 ```bash
 docker build -t simulation-benchmark-image .
-docker run -v ~/test_results:/app my-golang-app
+docker run -it --rm -v ./results:/app/results simulation-benchmark-image bash # This opens up Bash terminal connected to docker instance
+go test -bench=. -benchtime=5s -cpu=8 -timeout=0 -benchmem > /app/results/outputFile.txt
 ```
+
+Then, the output file will be generated at /results/outputFile.txt
 
 Plan - build docker compose file to run the simulation and output the results to a file.
 
