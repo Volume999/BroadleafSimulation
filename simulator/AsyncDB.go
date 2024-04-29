@@ -15,9 +15,87 @@ type TableReadWriteSimulator interface {
 	WriteN(string, int) error
 }
 
+type ConcTableReadWriteSimulator struct {
+	db   *asyncdb.AsyncDB
+	ctx  *asyncdb.ConnectionContext
+	keys int
+}
+
+func NewConcTableReadWriteSimulator(db *asyncdb.AsyncDB, ctx *asyncdb.ConnectionContext, keys int) *ConcTableReadWriteSimulator {
+	return &ConcTableReadWriteSimulator{db: db, ctx: ctx, keys: keys}
+}
+
+func (c ConcTableReadWriteSimulator) ReadN(table string, n int) error {
+	var readErr error
+	errChan := make(chan error, n)
+	defer close(errChan)
+	for i := 0; i < n; i++ {
+		key := RandomIntInRange(1, c.keys)
+		go func() {
+			res := <-c.db.Get(c.ctx, table, key)
+			errChan <- res.Err
+		}()
+	}
+	for i := 0; i < n; i++ {
+		if err := <-errChan; err != nil {
+			readErr = errors.Join(readErr, err)
+		}
+	}
+	return readErr
+}
+
+func (c ConcTableReadWriteSimulator) WriteN(table string, n int) error {
+	var writeErr error
+	errChan := make(chan error, n)
+	defer close(errChan)
+	for i := 0; i < n; i++ {
+		key := RandomIntInRange(1, c.keys)
+		go func() {
+			res := <-c.db.Put(c.ctx, table, key, "value")
+			errChan <- res.Err
+		}()
+	}
+	for i := 0; i < n; i++ {
+		if err := <-errChan; err != nil {
+			writeErr = errors.Join(writeErr, err)
+		}
+	}
+	return writeErr
+}
+
+type SyncTableReadWriteSimulator struct {
+	db   *asyncdb.AsyncDB
+	ctx  *asyncdb.ConnectionContext
+	keys int
+}
+
+func NewSyncTableReadWriteSimulator(db *asyncdb.AsyncDB, ctx *asyncdb.ConnectionContext, keys int) *SyncTableReadWriteSimulator {
+	return &SyncTableReadWriteSimulator{db: db, ctx: ctx, keys: keys}
+}
+
+func (s SyncTableReadWriteSimulator) ReadN(table string, n int) error {
+	for i := 0; i < n; i++ {
+		key := RandomIntInRange(1, s.keys)
+		res := <-s.db.Get(s.ctx, table, key)
+		if res.Err != nil {
+			return res.Err
+		}
+	}
+	return nil
+}
+
+func (s SyncTableReadWriteSimulator) WriteN(table string, n int) error {
+	for i := 0; i < n; i++ {
+		key := RandomIntInRange(1, s.keys)
+		res := <-s.db.Put(s.ctx, table, key, "value")
+		if res.Err != nil {
+			return res.Err
+		}
+	}
+	return nil
+}
+
 type AsyncDBSimulator struct {
-	db     *asyncdb.AsyncDB
-	ctx    *asyncdb.ConnectionContext
 	rw     TableReadWriteSimulator
 	config *simulation.Config
 	keys   int
@@ -142,10 +220,8 @@ func (a AsyncDBSimulator) CompleteOrder() error {
 	return nil
 }
 
-func NewAsyncDBSimulator(db *asyncdb.AsyncDB, ctx *asyncdb.ConnectionContext, rw TableReadWriteSimulator, config *simulation.Config, keys int) *AsyncDBSimulator {
+func NewAsyncDBSimulator(rw TableReadWriteSimulator, config *simulation.Config, keys int) *AsyncDBSimulator {
 	return &AsyncDBSimulator{
-		db:     db,
-		ctx:    ctx,
 		rw:     rw,
 		config: config,
 		keys:   keys,
