@@ -1,0 +1,6 @@
+results/
+.gitignore
+.git/
+.idea/
+Dockerfile
+.dockerignore
