@@ -2,8 +2,9 @@ module github.com/Volume999/BroadleafSimulation
 
 go 1.22.1
 
+require github.com/Volume999/AsyncDB v0.3.1-0.20240430095629-abac2438b90a
+
 require (
-	github.com/Volume999/AsyncDB v0.3.0 // indirect
 	github.com/dlsniper/debugger v0.6.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect

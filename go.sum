@@ -2,6 +2,8 @@ github.com/Volume999/AsyncDB v0.2.1-0.20240429115548-0e4cac8b62e2 h1:bbxdgE4E8Y5
 github.com/Volume999/AsyncDB v0.2.1-0.20240429115548-0e4cac8b62e2/go.mod h1:zr/HcRqFv0cLHFmpcqiu2NlOFHgJLUKJKET4K6E2LLw=
 github.com/Volume999/AsyncDB v0.3.0 h1:jOmQ0CDLcb/Uov+tS+nm52sx0evevGJLE8PKGEJcjXs=
 github.com/Volume999/AsyncDB v0.3.0/go.mod h1:zr/HcRqFv0cLHFmpcqiu2NlOFHgJLUKJKET4K6E2LLw=
+github.com/Volume999/AsyncDB v0.3.1-0.20240430095629-abac2438b90a h1:DQ3g31B/7y6kmOOAeHx97YyiieyGggQocOlWu5Jbxdc=
+github.com/Volume999/AsyncDB v0.3.1-0.20240430095629-abac2438b90a/go.mod h1:zr/HcRqFv0cLHFmpcqiu2NlOFHgJLUKJKET4K6E2LLw=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dlsniper/debugger v0.6.0 h1:AyPoOtJviCmig9AKNRAPPw5B5UyB+cI72zY3Jb+6LlA=
 github.com/dlsniper/debugger v0.6.0/go.mod h1:FFdRcPU2Yo4P411bp5U97DHJUSUMKcqw1QMGUu0uVb8=

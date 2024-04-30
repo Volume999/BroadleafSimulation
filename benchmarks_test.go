@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/Volume999/AsyncDB/asyncdb"
 	"github.com/Volume999/BroadleafSimulation/simulator"
 	"github.com/Volume999/BroadleafSimulation/workflows"
 	"github.com/Volume999/BroadleafSimulation/workload"
@@ -46,7 +47,7 @@ func workflowByType(workflowType string, simulator simulator.Simulator) workflow
 	}
 }
 
-func BenchmarkWorkflows(b *testing.B) {
+func BenchmarkSimulatedWorkflows(b *testing.B) {
 	disks := []string{"thread-safe"}
 	simulators := []string{"sequential", "async"}
 	//simulators := []string{"sequential"}
@@ -103,6 +104,35 @@ func BenchmarkWorkflows(b *testing.B) {
 			}
 		}
 	}
+}
+
+func BenchmarkAsyncDBWorkflow(b *testing.B) {
+	lm := asyncdb.NewLockManager()
+	tm := asyncdb.NewTransactionManager()
+	h := asyncdb.NewStringHasher()
+	db := asyncdb.NewAsyncDB(tm, lm, h)
+	connString := "postgres://postgres:secret@localhost:5432/postgres"
+	pgFactory, err := asyncdb.NewPgTableFactory(connString)
+	if err != nil {
+		panic("Failed to create PgTableFactory: " + err.Error())
+	}
+	if err := workflows.SetupAsyncDBWorkflow(db, pgFactory, 1); err != nil {
+		panic("Failed to setup AsyncDB workflow: " + err.Error())
+	}
+	b.ResetTimer()
+	benchStart := time.Now()
+	totalFunctionTime := int64(0)
+	b.RunParallel(func(pb *testing.PB) {
+		workflow := workflows.NewAsyncDBWorkflow(db, workflows.ConcurrentSimulationType, 100)
+		for pb.Next() {
+			fnStart := time.Now()
+			workflow.Execute()
+			atomic.AddInt64(&totalFunctionTime, time.Since(fnStart).Milliseconds())
+		}
+	})
+	b.ReportMetric(0, "ns/op")
+	b.ReportMetric(float64(time.Since(benchStart).Milliseconds())/float64(b.N), "ms/op1")
+	b.ReportMetric(float64(totalFunctionTime)/float64(b.N), "ms/op2")
 }
 
 //func BenchmarkDummy(b *testing.B) {
