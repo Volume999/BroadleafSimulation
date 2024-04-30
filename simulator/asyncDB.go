@@ -3,7 +3,6 @@ package simulator
 import (
 	"errors"
 	"github.com/Volume999/AsyncDB/asyncdb"
-	simulation "github.com/Volume999/BroadleafSimulation"
 	"github.com/Volume999/BroadleafSimulation/workload"
 	"math/rand"
 )
@@ -97,7 +96,7 @@ func (s SyncTableReadWriteSimulator) WriteN(table string, n int) error {
 
 type AsyncDBSimulator struct {
 	rw     TableReadWriteSimulator
-	config *simulation.Config
+	config *Config
 	keys   int
 }
 
@@ -220,7 +219,7 @@ func (a AsyncDBSimulator) CompleteOrder() error {
 	return nil
 }
 
-func NewAsyncDBSimulator(rw TableReadWriteSimulator, config *simulation.Config, keys int) *AsyncDBSimulator {
+func NewAsyncDBSimulator(rw TableReadWriteSimulator, config *Config, keys int) *AsyncDBSimulator {
 	return &AsyncDBSimulator{
 		rw:     rw,
 		config: config,

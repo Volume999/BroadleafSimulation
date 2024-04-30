@@ -1,7 +1,6 @@
-package simulation_test
+package main
 
 import (
-	"github.com/Volume999/BroadleafSimulation"
 	"github.com/Volume999/BroadleafSimulation/simulator"
 	"github.com/Volume999/BroadleafSimulation/workflows"
 	"github.com/Volume999/BroadleafSimulation/workload"
@@ -12,7 +11,7 @@ import (
 	"time"
 )
 
-var config = simulation.RandomConfig()
+var config = simulator.RandomConfig()
 
 func diskByType(diskType string, accessTimeMs int) workload.DiskAccessSimulator {
 	switch diskType {
@@ -25,7 +24,7 @@ func diskByType(diskType string, accessTimeMs int) workload.DiskAccessSimulator 
 	}
 }
 
-func simulatorByType(simulatorType string, config *simulation.Config, disk workload.DiskAccessSimulator) simulator.Simulator {
+func simulatorByType(simulatorType string, config *simulator.Config, disk workload.DiskAccessSimulator) simulator.Simulator {
 	switch simulatorType {
 	case "sequential":
 		return simulator.NewSequentialSimulator(config, disk)

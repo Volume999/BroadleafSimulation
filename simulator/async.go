@@ -1,18 +1,17 @@
 package simulator
 
 import (
-	"github.com/Volume999/BroadleafSimulation"
 	"github.com/Volume999/BroadleafSimulation/workload"
 	"math/rand"
 	"sync"
 )
 
 type AsyncSimulator struct {
-	config *simulation.Config
+	config *Config
 	disk   workload.DiskAccessSimulator
 }
 
-func NewAsyncSimulator(config *simulation.Config, disk workload.DiskAccessSimulator) *AsyncSimulator {
+func NewAsyncSimulator(config *Config, disk workload.DiskAccessSimulator) *AsyncSimulator {
 	return &AsyncSimulator{
 		config: config,
 		disk:   disk,

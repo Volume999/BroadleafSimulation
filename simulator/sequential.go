@@ -1,17 +1,16 @@
 package simulator
 
 import (
-	"github.com/Volume999/BroadleafSimulation"
 	"github.com/Volume999/BroadleafSimulation/workload"
 	"math/rand"
 )
 
 type SequentialSimulator struct {
-	config *simulation.Config
+	config *Config
 	disk   workload.DiskAccessSimulator
 }
 
-func NewSequentialSimulator(config *simulation.Config, disk workload.DiskAccessSimulator) *SequentialSimulator {
+func NewSequentialSimulator(config *Config, disk workload.DiskAccessSimulator) *SequentialSimulator {
 	return &SequentialSimulator{
 		config: config,
 		disk:   disk,
