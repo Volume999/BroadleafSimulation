@@ -29,3 +29,6 @@ go.work
 
 # Ignore fuzz test results
 testdata
+
+# Ignore log files
+*.log
