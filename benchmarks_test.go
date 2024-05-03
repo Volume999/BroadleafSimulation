@@ -1,10 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"github.com/Volume999/AsyncDB/asyncdb"
 	"github.com/Volume999/BroadleafSimulation/simulator"
 	"github.com/Volume999/BroadleafSimulation/workflows"
 	"github.com/Volume999/BroadleafSimulation/workload"
+	"log"
+	"os"
 	"runtime"
 	"strconv"
 	"sync/atomic"
@@ -106,33 +109,76 @@ func BenchmarkSimulatedWorkflows(b *testing.B) {
 	}
 }
 
-func BenchmarkAsyncDBWorkflow(b *testing.B) {
-	lm := asyncdb.NewLockManager()
-	tm := asyncdb.NewTransactionManager()
-	h := asyncdb.NewStringHasher()
-	db := asyncdb.NewAsyncDB(tm, lm, h)
-	connString := "postgres://postgres:secret@localhost:5432/postgres"
-	pgFactory, err := asyncdb.NewPgTableFactory(connString)
-	if err != nil {
-		panic("Failed to create PgTableFactory: " + err.Error())
+func getConfigCombinations(configs ...[]interface{}) [][]interface{} {
+	if len(configs) == 0 {
+		return [][]interface{}{}
 	}
-	if err := workflows.SetupAsyncDBWorkflow(db, pgFactory, 1); err != nil {
-		panic("Failed to setup AsyncDB workflow: " + err.Error())
-	}
-	b.ResetTimer()
-	benchStart := time.Now()
-	totalFunctionTime := int64(0)
-	b.RunParallel(func(pb *testing.PB) {
-		workflow := workflows.NewAsyncDBWorkflow(db, workflows.ConcurrentSimulationType, 100)
-		for pb.Next() {
-			fnStart := time.Now()
-			workflow.Execute()
-			atomic.AddInt64(&totalFunctionTime, time.Since(fnStart).Milliseconds())
+	if len(configs) == 1 {
+		res := make([][]interface{}, 0)
+		for _, c := range configs[0] {
+			res = append(res, []interface{}{c})
 		}
-	})
-	b.ReportMetric(0, "ns/op")
-	b.ReportMetric(float64(time.Since(benchStart).Milliseconds())/float64(b.N), "ms/op1")
-	b.ReportMetric(float64(totalFunctionTime)/float64(b.N), "ms/op2")
+		return res
+	}
+	config := configs[0]
+	otherConfigs := getConfigCombinations(configs[1:]...)
+	fmt.Println("Other Configs: ", otherConfigs)
+	res := make([][]interface{}, 0)
+	for _, c := range config {
+		for _, oc := range otherConfigs {
+			res = append(res, append([]interface{}{c}, oc...))
+		}
+	}
+	return res
+}
+
+func BenchmarkAsyncDBWorkflow(b *testing.B) {
+	// TODO: Pg vs InMemory Simulation
+	keys := []interface{}{1000, 10000, 100000}
+	wfTypes := []interface{}{"sequential", "concurrent"}
+	simTypes := []interface{}{"sequential", "concurrent"}
+	parallelisms := []interface{}{1, 10, 100, 1000, 10000}
+	configCombinations := getConfigCombinations(keys, wfTypes, simTypes, parallelisms)
+	for _, config := range configCombinations {
+		keys := config[0].(int)
+		wfType := config[1].(string)
+		simType := config[2].(string)
+		parallelism := config[3].(int)
+		b.Run("keys="+strconv.Itoa(keys)+"/wfType="+wfType+"/simType="+simType+"/parallelism="+strconv.Itoa(parallelism), func(b *testing.B) {
+			lm := asyncdb.NewLockManager()
+			tm := asyncdb.NewTransactionManager()
+			h := asyncdb.NewStringHasher()
+			db := asyncdb.NewAsyncDB(tm, lm, h, asyncdb.WithExplicitTxn())
+			businessErrProb := 0
+			if err := workflows.SetupAsyncDBInMemoryWorkflow(db, keys); err != nil {
+				panic("Failed to setup AsyncDB workflow: " + err.Error())
+			}
+			//connString := "postgres://postgres:secret@localhost:5432/postgres"
+			//if err := workflows.SetupAsyncDBWorkflow(db, connString, keys); err != nil {
+			//	panic("Failed to setup AsyncDB workflow: " + err.Error())
+			//}
+			f, err := os.OpenFile("simulation_bench.log", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+			if err != nil {
+				panic("Failed to open file: " + err.Error())
+			}
+			l := log.New(f, "AsyncDB Workflow: ", log.LstdFlags)
+			b.ResetTimer()
+			benchStart := time.Now()
+			totalFunctionTime := int64(0)
+			b.SetParallelism(100)
+			b.RunParallel(func(pb *testing.PB) {
+				workflow := workflows.NewAsyncDBWorkflow(db, l, workflows.SequentialSimulationType, keys, businessErrProb)
+				for pb.Next() {
+					fnStart := time.Now()
+					workflow.Execute(workflows.SequentialSimulationType)
+					atomic.AddInt64(&totalFunctionTime, time.Since(fnStart).Milliseconds())
+				}
+			})
+			b.ReportMetric(0, "ns/op")
+			b.ReportMetric(float64(time.Since(benchStart).Milliseconds())/float64(b.N), "ms/op1")
+			b.ReportMetric(float64(totalFunctionTime)/float64(b.N), "ms/op2")
+		})
+	}
 }
 
 //func BenchmarkDummy(b *testing.B) {

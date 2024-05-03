@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/Volume999/AsyncDB/asyncdb"
 	"github.com/Volume999/BroadleafSimulation/workload"
+	"log"
 	"math/rand"
 )
 
@@ -95,9 +96,11 @@ func (s SyncTableReadWriteSimulator) WriteN(table string, n int) error {
 }
 
 type AsyncDBSimulator struct {
-	rw     TableReadWriteSimulator
-	config *Config
-	keys   int
+	rw              TableReadWriteSimulator
+	l               *log.Logger
+	config          *Config
+	keys            int
+	businessErrProb int
 }
 
 func RandomIntInRange(i int, i2 int) int {
@@ -108,19 +111,19 @@ func RandomChance(prob int) bool {
 	return rand.Intn(100) < prob
 }
 
-func (a AsyncDBSimulator) ValidateCheckout() error {
+func (a *AsyncDBSimulator) ValidateCheckout() error {
 	workload.SimulateCpuLoad(100)
 	// One DB call for checking isCompleted
 	if err := a.rw.ReadN("Orders", 1); err != nil {
 		return err
 	}
-	if RandomChance(3) {
+	if RandomChance(a.businessErrProb) {
 		return ErrBusinessLogic
 	}
 	return nil
 }
 
-func (a AsyncDBSimulator) ValidateAvailability() error {
+func (a *AsyncDBSimulator) ValidateAvailability() error {
 	// Get the Item records
 	if err := a.rw.ReadN("Items", a.config.OrderItemsCnt); err != nil {
 		return err
@@ -129,13 +132,13 @@ func (a AsyncDBSimulator) ValidateAvailability() error {
 	if err := a.rw.ReadN("StockKeepingUnits", a.config.OrderItemsCnt); err != nil {
 		return err
 	}
-	if RandomChance(3) {
+	if RandomChance(a.businessErrProb) {
 		return ErrBusinessLogic
 	}
 	return nil
 }
 
-func (a AsyncDBSimulator) VerifyCustomer() error {
+func (a *AsyncDBSimulator) VerifyCustomer() error {
 	// Try to read customer	record
 	if err := a.rw.ReadN("Customers", 1); err != nil {
 		return err
@@ -145,13 +148,13 @@ func (a AsyncDBSimulator) VerifyCustomer() error {
 	if err := a.rw.ReadN("ItemOffers", a.config.OrderItemsCnt); err != nil {
 		return err
 	}
-	if RandomChance(3) {
+	if RandomChance(a.businessErrProb) {
 		return ErrBusinessLogic
 	}
 	return nil
 }
 
-func (a AsyncDBSimulator) ValidatePayment() error {
+func (a *AsyncDBSimulator) ValidatePayment() error {
 	// Check payments, confirm unconfirmed payments
 	// Assume 1 or 2 payments are unconfirmed
 	var confirmedPayments, unconfirmedPayments int
@@ -163,31 +166,31 @@ func (a AsyncDBSimulator) ValidatePayment() error {
 	if err := a.rw.WriteN("OrderPayments", unconfirmedPayments); err != nil {
 		return err
 	}
-	if RandomChance(3) {
+	if RandomChance(a.businessErrProb) {
 		return ErrBusinessLogic
 	}
 	return nil
 }
 
-func (a AsyncDBSimulator) ValidateProductOption() error {
+func (a *AsyncDBSimulator) ValidateProductOption() error {
 	// Assume one ItemOption per OrderItem
 	if err := a.rw.ReadN("ItemOptions", a.config.OrderItemsCnt); err != nil {
 		return err
 	}
-	if RandomChance(3) {
+	if RandomChance(a.businessErrProb) {
 		return ErrBusinessLogic
 	}
 	return nil
 }
 
-func (a AsyncDBSimulator) RecordOffer() error {
+func (a *AsyncDBSimulator) RecordOffer() error {
 	if err := a.rw.WriteN("CustomerOffersUsage", a.config.OrderItemsCnt); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (a AsyncDBSimulator) CommitTax() error {
+func (a *AsyncDBSimulator) CommitTax() error {
 	if err := a.rw.ReadN("TaxProviders", 1); err != nil {
 		return err
 	}
@@ -200,7 +203,7 @@ func (a AsyncDBSimulator) CommitTax() error {
 	return nil
 }
 
-func (a AsyncDBSimulator) DecrementInventory() error {
+func (a *AsyncDBSimulator) DecrementInventory() error {
 	// TODO: These reads and writes should hit the same keys as other activities
 	if err := a.rw.ReadN("Items", a.config.OrderItemsCnt); err != nil {
 		return err
@@ -211,7 +214,7 @@ func (a AsyncDBSimulator) DecrementInventory() error {
 	return nil
 }
 
-func (a AsyncDBSimulator) CompleteOrder() error {
+func (a *AsyncDBSimulator) CompleteOrder() error {
 	// TODO: In general, I should initialize access keys before I start the simulation for better lock integrity
 	if err := a.rw.WriteN("Orders", 1); err != nil {
 		return err
@@ -219,10 +222,12 @@ func (a AsyncDBSimulator) CompleteOrder() error {
 	return nil
 }
 
-func NewAsyncDBSimulator(rw TableReadWriteSimulator, config *Config, keys int) *AsyncDBSimulator {
+func NewAsyncDBSimulator(rw TableReadWriteSimulator, l *log.Logger, config *Config, keys int, bErrProb int) *AsyncDBSimulator {
 	return &AsyncDBSimulator{
-		rw:     rw,
-		config: config,
-		keys:   keys,
+		rw:              rw,
+		l:               l,
+		config:          config,
+		keys:            keys,
+		businessErrProb: bErrProb,
 	}
 }
