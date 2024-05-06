@@ -36,9 +36,9 @@ func debugAsyncDBWorkflow() {
 			i := i
 			l := log.New(f, fmt.Sprintf("Workflow #%v: ", i+1), log.LstdFlags)
 			//l := log.New(os.Stdout, fmt.Sprintf("Workflow #%v: ", i+1), log.LstdFlags)
-			workflow := workflows.NewAsyncDBWorkflow(db, l, workflows.ConcurrentSimulationType, 1, 0)
+			workflow := workflows.NewAsyncDBWorkflow(db, l, workflows.Concurrent, 1, 0)
 			for range iters {
-				workflow.Execute(workflows.ConcurrentSimulationType)
+				workflow.Execute(workflows.Concurrent)
 			}
 		}()
 	}

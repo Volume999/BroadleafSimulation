@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	ConcurrentSimulationType = "concurrent"
-	SequentialSimulationType = "sequential"
+	Concurrent = "concurrent"
+	Sequential = "sequential"
 )
 
 type AsyncDBWorkflow struct {
@@ -69,7 +69,7 @@ func SetupAsyncDBInMemoryWorkflow(db *asyncdb.AsyncDB, keys int) error {
 
 func SetupPgTables(connString string, keys int) error {
 	tables := []string{"Orders", "Items", "StockKeepingUnits", "Customers", "ItemOffers", "OrderPayments", "ItemOptions", "CustomerOffersUsage", "OrderTaxes"}
-	pgctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	pgctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	pool, err := pgxpool.New(pgctx, connString)
 	if err != nil {
@@ -234,9 +234,9 @@ func (w *AsyncDBWorkflow) ExecuteSequential() error {
 
 func (w *AsyncDBWorkflow) Execute(wfType string) {
 	switch wfType {
-	case ConcurrentSimulationType:
+	case Concurrent:
 		w.withTransaction(w.ExecuteConcurrent)
-	case SequentialSimulationType:
+	case Sequential:
 		w.withTransaction(w.ExecuteSequential)
 	}
 }
