@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/Volume999/AsyncDB/asyncdb"
 	"github.com/Volume999/BroadleafSimulation/simulator"
 	"github.com/Volume999/BroadleafSimulation/workflows"
@@ -122,7 +121,6 @@ func getConfigCombinations(configs ...[]interface{}) [][]interface{} {
 	}
 	config := configs[0]
 	otherConfigs := getConfigCombinations(configs[1:]...)
-	fmt.Println("Other Configs: ", otherConfigs)
 	res := make([][]interface{}, 0)
 	for _, c := range config {
 		for _, oc := range otherConfigs {
@@ -139,6 +137,14 @@ func BenchmarkAsyncDBWorkflow(b *testing.B) {
 	simTypes := []interface{}{"sequential", "concurrent"}
 	parallelisms := []interface{}{1, 10, 100, 1000, 10000}
 	configCombinations := getConfigCombinations(keys, wfTypes, simTypes, parallelisms)
+	connString := "postgres://postgres:secret@localhost:5432/postgres"
+	if err := workflows.SetupPgTables(connString, 100000); err != nil {
+		panic("Failed to setup Pg tables: " + err.Error())
+	}
+	pgFactory, err := asyncdb.NewPgTableFactory(connString)
+	if err != nil {
+		panic("Failed to create PgTableFactory: " + err.Error())
+	}
 	for _, config := range configCombinations {
 		keys := config[0].(int)
 		wfType := config[1].(string)
@@ -150,13 +156,12 @@ func BenchmarkAsyncDBWorkflow(b *testing.B) {
 			h := asyncdb.NewStringHasher()
 			db := asyncdb.NewAsyncDB(tm, lm, h, asyncdb.WithExplicitTxn())
 			businessErrProb := 0
-			if err := workflows.SetupAsyncDBInMemoryWorkflow(db, keys); err != nil {
-				panic("Failed to setup AsyncDB workflow: " + err.Error())
-			}
-			//connString := "postgres://postgres:secret@localhost:5432/postgres"
-			//if err := workflows.SetupAsyncDBWorkflow(db, connString, keys); err != nil {
+			//if err := workflows.SetupAsyncDBInMemoryWorkflow(db, keys); err != nil {
 			//	panic("Failed to setup AsyncDB workflow: " + err.Error())
 			//}
+			if err := workflows.SetupAsyncDBWorkflow(db, pgFactory); err != nil {
+				panic("Failed to setup AsyncDB workflow: " + err.Error())
+			}
 			f, err := os.OpenFile("simulation_bench.log", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 			if err != nil {
 				panic("Failed to open file: " + err.Error())

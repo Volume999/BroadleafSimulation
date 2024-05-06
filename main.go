@@ -16,11 +16,14 @@ func debugAsyncDBWorkflow() {
 	db := asyncdb.NewAsyncDB(tm, lm, h)
 	f, err := os.OpenFile("simulation.log", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	connString := "postgres://postgres:secret@localhost:5432/postgres"
+	pgFactory, err := asyncdb.NewPgTableFactory(connString)
 	if err != nil {
 		panic("Failed to create PgTableFactory: " + err.Error())
 	}
-	err = workflows.SetupAsyncDBWorkflow(db, connString, 10)
-	if err != nil {
+	if err = workflows.SetupPgTables(connString, 100000); err != nil {
+		panic("Failed to setup Pg tables: " + err.Error())
+	}
+	if err = workflows.SetupAsyncDBWorkflow(db, pgFactory); err != nil {
 		panic("Failed to setup AsyncDB workflow: " + err.Error())
 	}
 	wg := sync.WaitGroup{}
