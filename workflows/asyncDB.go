@@ -44,7 +44,7 @@ func NewAsyncDBWorkflow(db *asyncdb.AsyncDB, l *log.Logger, simType string, keys
 }
 
 func SetupAsyncDBInMemoryWorkflow(db *asyncdb.AsyncDB, keys int) error {
-	tables := []string{"Orders", "Items", "StockKeepingUnits", "Customers", "ItemOffers", "OrderPayments", "ItemOptions", "CustomerOffersUsage", "TaxProviders", "OrderTaxes"}
+	tables := []string{"Orders", "Items", "StockKeepingUnits", "Customers", "ItemOffers", "OrderPayments", "ItemOptions", "CustomerOffersUsage", "OrderTaxes"}
 	ctx, _ := db.Connect()
 
 	for _, table := range tables {
@@ -67,39 +67,37 @@ func SetupAsyncDBInMemoryWorkflow(db *asyncdb.AsyncDB, keys int) error {
 	return err
 }
 
-func SetupAsyncDBWorkflow(db *asyncdb.AsyncDB, connString string, keys int) error {
-	tables := []string{"Orders", "Items", "StockKeepingUnits", "Customers", "ItemOffers", "OrderPayments", "ItemOptions", "CustomerOffersUsage", "TaxProviders", "OrderTaxes"}
+func SetupPgTables(connString string, keys int) error {
+	tables := []string{"Orders", "Items", "StockKeepingUnits", "Customers", "ItemOffers", "OrderPayments", "ItemOptions", "CustomerOffersUsage", "OrderTaxes"}
 	pgctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	pool, err := pgxpool.New(pgctx, connString)
 	if err != nil {
 		return err
 	}
-	pgFactory, err := asyncdb.NewPgTableFactory(connString)
-	if err != nil {
-		return err
+	for _, table := range tables {
+		if _, err = pool.Exec(pgctx, fmt.Sprintf("INSERT INTO %s (key, value) SELECT k, 'value' FROM generate_series(1, %v) k ON CONFLICT (key) DO NOTHING", table, keys)); err != nil {
+			return err
+		}
 	}
+	pool.Close()
+	return nil
+}
+
+func SetupAsyncDBWorkflow(db *asyncdb.AsyncDB, pgFactory *asyncdb.PgTableFactory) error {
+	tables := []string{"Orders", "Items", "StockKeepingUnits", "Customers", "ItemOffers", "OrderPayments", "ItemOptions", "CustomerOffersUsage", "TaxProviders", "OrderTaxes"}
 	ctx, _ := db.Connect()
 	for _, table := range tables {
 		tbl, err := pgFactory.GetTable(table)
 		if err != nil {
 			return err
 		}
-		if _, err = pool.Exec(pgctx, fmt.Sprintf("INSERT INTO %s (key, value) SELECT k, 'value' FROM generate_series(1, %v) k ON CONFLICT (key) DO NOTHING", table, keys)); err != nil {
-			return err
-		}
-		//for i := 0; i <= keys; i++ {
-		//	err = tbl.Put(i, "value")
-		//	if err != nil {
-		//		return err
-		//	}
-		//}
 		err = db.CreateTable(ctx, tbl)
 		if err != nil {
 			return err
 		}
 	}
-	err = db.Disconnect(ctx)
+	err := db.Disconnect(ctx)
 	return err
 }
 

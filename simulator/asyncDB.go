@@ -191,9 +191,6 @@ func (a *AsyncDBSimulator) RecordOffer() error {
 }
 
 func (a *AsyncDBSimulator) CommitTax() error {
-	if err := a.rw.ReadN("TaxProviders", 1); err != nil {
-		return err
-	}
 	if err := a.rw.ReadN("Items", a.config.OrderItemsCnt); err != nil {
 		return err
 	}
