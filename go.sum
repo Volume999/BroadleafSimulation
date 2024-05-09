@@ -6,6 +6,8 @@ github.com/Volume999/AsyncDB v0.4.0 h1:BHE/0xpCdfu6NweRVtaBlXg/jeFdPSLph7Miim1k4
 github.com/Volume999/AsyncDB v0.4.0/go.mod h1:ua2lINUk63U+cTruQD2+UmRT8rhqXIeHNh2S54ddgXo=
 github.com/Volume999/AsyncDB v0.4.1-0.20240502223904-fab42a053ba3 h1:7TAPOfq4UQCHHl62vJRF1lP9L/GyT6ORuN6duWJYqbE=
 github.com/Volume999/AsyncDB v0.4.1-0.20240502223904-fab42a053ba3/go.mod h1:ua2lINUk63U+cTruQD2+UmRT8rhqXIeHNh2S54ddgXo=
+github.com/Volume999/AsyncDB v0.4.1-0.20240506124432-7553a8801c46 h1:ocToEm0cnJrGVcmIITuRvD0mxot3kv2nkQpbJvpTFxM=
+github.com/Volume999/AsyncDB v0.4.1-0.20240506124432-7553a8801c46/go.mod h1:ua2lINUk63U+cTruQD2+UmRT8rhqXIeHNh2S54ddgXo=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

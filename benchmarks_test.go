@@ -131,7 +131,7 @@ func getConfigCombinations(configs ...[]interface{}) [][]interface{} {
 }
 func BenchmarkAsyncDBWorkflow(b *testing.B) {
 	// TODO: Pg vs InMemory Simulation
-	keys := []interface{}{1000, 10000, 100000}
+	keys := []interface{}{100, 1000, 10000}
 	wfTypes := []interface{}{workflows.Sequential, workflows.Concurrent}
 	simTypes := []interface{}{workflows.Sequential, workflows.Concurrent}
 	parallelisms := []interface{}{1, 10, 100, 1000, 10000}
@@ -180,12 +180,12 @@ func BenchmarkAsyncDBWorkflow(b *testing.B) {
 			})
 		}
 	}
-	//b.Run("TableType=InMemory", func(b *testing.B) {
-	//	setup := func(db *asyncdb.AsyncDB, keys int) error {
-	//		return workflows.SetupAsyncDBInMemoryWorkflow(db, keys)
-	//	}
-	//	fun(b, setup)
-	//})
+	b.Run("TableType=InMemory", func(b *testing.B) {
+		setup := func(db *asyncdb.AsyncDB, keys int) error {
+			return workflows.SetupAsyncDBInMemoryWorkflow(db, keys)
+		}
+		fun(b, setup)
+	})
 
 	b.Run("TableType=Postgres", func(b *testing.B) {
 		connString := "postgres://postgres:secret@localhost:5432/postgres"

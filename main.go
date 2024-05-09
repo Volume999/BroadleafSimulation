@@ -28,7 +28,7 @@ func debugAsyncDBWorkflow() {
 	}
 	wg := sync.WaitGroup{}
 	threads := 100
-	iters := 2
+	iters := 10
 	wg.Add(threads)
 	for i := range threads {
 		go func() {
