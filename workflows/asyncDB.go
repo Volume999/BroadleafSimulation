@@ -33,13 +33,12 @@ func NewAsyncDBWorkflow(db *asyncdb.AsyncDB, l *log.Logger, simType string, keys
 	var tableRWSimulator simulator.TableReadWriteSimulator
 	switch simType {
 	case "concurrent":
-		tableRWSimulator = simulator.NewConcTableReadWriteSimulator(db, ctx, keys)
+		tableRWSimulator = simulator.NewConcTableReadWriteSimulator(db, ctx)
 	case "sequential":
-		tableRWSimulator = simulator.NewSyncTableReadWriteSimulator(db, ctx, keys)
+		tableRWSimulator = simulator.NewSyncTableReadWriteSimulator(db, ctx)
 	}
 
-	config := simulator.RandomConfig()
-	sim := simulator.NewAsyncDBSimulator(tableRWSimulator, l, config, keys, bErrProb)
+	sim := simulator.NewAsyncDBSimulator(tableRWSimulator, l, keys, bErrProb)
 	return &AsyncDBWorkflow{db, l, ctx, sim, simType, keys}
 }
 
@@ -133,17 +132,18 @@ func (w *AsyncDBWorkflow) withTransaction(workflow func() error) {
 			}
 			w.ctx.Txn.SetTimestamp(ts)
 			//w.s.SetConnCtx(w.ctx)
+			config := simulator.RandomConfig()
+			config.SetAccessKeys(w.keys)
 
 			var tableRWSimulator simulator.TableReadWriteSimulator
 			switch w.simType {
 			case "concurrent":
-				tableRWSimulator = simulator.NewConcTableReadWriteSimulator(w.db, w.ctx, w.keys)
+				tableRWSimulator = simulator.NewConcTableReadWriteSimulator(w.db, w.ctx)
 			case "sequential":
-				tableRWSimulator = simulator.NewSyncTableReadWriteSimulator(w.db, w.ctx, w.keys)
+				tableRWSimulator = simulator.NewSyncTableReadWriteSimulator(w.db, w.ctx)
 			}
 
-			config := simulator.RandomConfig()
-			w.s = simulator.NewAsyncDBSimulator(tableRWSimulator, w.l, config, w.keys, 0)
+			w.s = simulator.NewAsyncDBSimulator(tableRWSimulator, w.l, w.keys, 0)
 			err = workflow()
 		}
 	}
