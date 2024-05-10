@@ -156,12 +156,6 @@ func BenchmarkAsyncDBWorkflow(b *testing.B) {
 				if err := workflowSetup(db, keys); err != nil {
 					panic("Failed to setup AsyncDB workflow: " + err.Error())
 				}
-				//if err := workflows.SetupAsyncDBInMemoryWorkflow(db, keys); err != nil {
-				//	panic("Failed to setup AsyncDB workflow: " + err.Error())
-				//}
-				//if err := workflows.SetupAsyncDBWorkflow(db, pgFactory); err != nil {
-				//	panic("Failed to setup AsyncDB workflow: " + err.Error())
-				//}
 				b.ResetTimer()
 				benchStart := time.Now()
 				totalFunctionTime := int64(0)
