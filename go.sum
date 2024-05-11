@@ -8,6 +8,10 @@ github.com/Volume999/AsyncDB v0.4.1-0.20240502223904-fab42a053ba3 h1:7TAPOfq4UQC
 github.com/Volume999/AsyncDB v0.4.1-0.20240502223904-fab42a053ba3/go.mod h1:ua2lINUk63U+cTruQD2+UmRT8rhqXIeHNh2S54ddgXo=
 github.com/Volume999/AsyncDB v0.4.1-0.20240506124432-7553a8801c46 h1:ocToEm0cnJrGVcmIITuRvD0mxot3kv2nkQpbJvpTFxM=
 github.com/Volume999/AsyncDB v0.4.1-0.20240506124432-7553a8801c46/go.mod h1:ua2lINUk63U+cTruQD2+UmRT8rhqXIeHNh2S54ddgXo=
+github.com/Volume999/AsyncDB v0.5.1-0.20240511083746-d8ee0af4c19c h1:navg4FI72X8mtFEtOPiKJd30Wow/GceNfB7IsSWMeqc=
+github.com/Volume999/AsyncDB v0.5.1-0.20240511083746-d8ee0af4c19c/go.mod h1:ua2lINUk63U+cTruQD2+UmRT8rhqXIeHNh2S54ddgXo=
+github.com/Volume999/AsyncDB v0.5.1-0.20240511100455-5945990de709 h1:KOXXVQaPqQJUFtMbe3B+3wW/0Ux3xjvB45hcRrb3e1E=
+github.com/Volume999/AsyncDB v0.5.1-0.20240511100455-5945990de709/go.mod h1:ua2lINUk63U+cTruQD2+UmRT8rhqXIeHNh2S54ddgXo=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

@@ -131,69 +131,84 @@ func getConfigCombinations(configs ...[]interface{}) [][]interface{} {
 }
 func BenchmarkAsyncDBWorkflow(b *testing.B) {
 	// TODO: Pg vs InMemory Simulation
-	keys := []interface{}{100, 1000, 10000}
+	//keys := []interface{}{100, 1000, 10000}
 	wfTypes := []interface{}{workflows.Sequential, workflows.Concurrent}
 	simTypes := []interface{}{workflows.Sequential, workflows.Concurrent}
 	parallelisms := []interface{}{1, 10, 100, 1000, 10000}
-	configCombinations := getConfigCombinations(keys, wfTypes, simTypes, parallelisms)
 	f, err := os.OpenFile("simulation_bench.log", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		panic("Failed to open file: " + err.Error())
 	}
 	l := log.New(f, "AsyncDB Workflow: ", log.LstdFlags)
-	fun := func(b *testing.B, workflowSetup func(db *asyncdb.AsyncDB, keys int) error) {
-		for _, config := range configCombinations {
-			keys := config[0].(int)
-			wfType := config[1].(string)
-			simType := config[2].(string)
-			parallelism := config[3].(int)
-			businessErrProb := 0
-			b.Run("keys="+strconv.Itoa(keys)+"/wfType="+wfType+"/simType="+simType+"/parallelism="+strconv.Itoa(parallelism), func(b *testing.B) {
-				lm := asyncdb.NewLockManager()
-				tm := asyncdb.NewTransactionManager()
-				h := asyncdb.NewStringHasher()
-				db := asyncdb.NewAsyncDB(tm, lm, h, asyncdb.WithExplicitTxn())
-				if err := workflowSetup(db, keys); err != nil {
-					panic("Failed to setup AsyncDB workflow: " + err.Error())
+	runInstance := func(b *testing.B, instanceSetup func(db *asyncdb.AsyncDB, keys int) error, keys int, wfType string, simType string, parallelism int, businessErrProb int) {
+		b.Run("keys="+strconv.Itoa(keys)+"/wfType="+wfType+"/simType="+simType+"/parallelism="+strconv.Itoa(parallelism), func(b *testing.B) {
+			lm := asyncdb.NewLockManager()
+			tm := asyncdb.NewTransactionManager()
+			h := asyncdb.NewStringHasher()
+			db := asyncdb.NewAsyncDB(tm, lm, h, asyncdb.WithExplicitTxn())
+			if err := instanceSetup(db, keys); err != nil {
+				panic("Failed to setup AsyncDB workflow: " + err.Error())
+			}
+			b.ResetTimer()
+			benchStart := time.Now()
+			totalFunctionTime := int64(0)
+			b.SetParallelism(parallelism)
+			b.RunParallel(func(pb *testing.PB) {
+				workflow := workflows.NewAsyncDBWorkflow(db, l, wfType, keys, businessErrProb)
+				for pb.Next() {
+					fnStart := time.Now()
+					workflow.Execute(simType)
+					atomic.AddInt64(&totalFunctionTime, time.Since(fnStart).Milliseconds())
 				}
-				b.ResetTimer()
-				benchStart := time.Now()
-				totalFunctionTime := int64(0)
-				b.SetParallelism(parallelism)
-				b.RunParallel(func(pb *testing.PB) {
-					workflow := workflows.NewAsyncDBWorkflow(db, l, wfType, keys, businessErrProb)
-					for pb.Next() {
-						fnStart := time.Now()
-						workflow.Execute(simType)
-						atomic.AddInt64(&totalFunctionTime, time.Since(fnStart).Milliseconds())
-					}
-				})
-				b.ReportMetric(0, "ns/op")
-				b.ReportMetric(float64(time.Since(benchStart).Milliseconds())/float64(b.N), "ms/op1")
-				b.ReportMetric(float64(totalFunctionTime)/float64(b.N), "ms/op2")
 			})
-		}
+			b.ReportMetric(0, "ns/op")
+			b.ReportMetric(float64(time.Since(benchStart).Milliseconds())/float64(b.N), "ms/op1")
+			b.ReportMetric(float64(totalFunctionTime)/float64(b.N), "ms/op2")
+		})
 	}
-	b.Run("TableType=InMemory", func(b *testing.B) {
-		setup := func(db *asyncdb.AsyncDB, keys int) error {
-			return workflows.SetupAsyncDBInMemoryWorkflow(db, keys)
-		}
-		fun(b, setup)
-	})
+	//runBench := func(b *testing.B, configCombinations [][]interface{}, instanceSetup func(db *asyncdb.AsyncDB, keys int) error) {
+	//	for _, config := range configCombinations {
+	//		keys := config[0].(int)
+	//		wfType := config[1].(string)
+	//		simType := config[2].(string)
+	//		parallelism := config[3].(int)
+	//		businessErrProb := 0
+	//		runInstance(b, instanceSetup, keys, wfType, simType, parallelism, businessErrProb)
+	//	}
+	//}
+	//b.Run("TableType=InMemory", func(b *testing.B) {
+	//	setup := func(db *asyncdb.AsyncDB, keys int) error {
+	//		return workflows.SetupAsyncDBInMemoryWorkflow(db, keys)
+	//	}
+	//	configCombinations := getConfigCombinations(keys, wfTypes, simTypes, parallelisms)
+	//	runBench(b, configCombinations, setup)
+	//})
+	//
+	//b.Run("TableType=Postgres", func(b *testing.B) {
+	//	connString := "postgres://postgres:secret@localhost:5432/postgres"
+	//	if err := workflows.SetupPgTables(connString, 100000); err != nil {
+	//		panic("Failed to set up Pg tables: " + err.Error())
+	//	}
+	//	pgFactory, err := asyncdb.NewPgTableFactory(connString)
+	//	if err != nil {
+	//		panic("Failed to create PgTableFactory: " + err.Error())
+	//	}
+	//	setup := func(db *asyncdb.AsyncDB, _ int) error {
+	//		return workflows.SetupAsyncDBWorkflow(db, pgFactory)
+	//	}
+	//	configCombinations := getConfigCombinations(keys, wfTypes, simTypes, parallelisms)
+	//	runBench(b, configCombinations, setup)
+	//})
 
-	b.Run("TableType=Postgres", func(b *testing.B) {
-		connString := "postgres://postgres:secret@localhost:5432/postgres"
-		if err := workflows.SetupPgTables(connString, 100000); err != nil {
-			panic("Failed to setup Pg tables: " + err.Error())
+	b.Run("TableType=Simulated", func(b *testing.B) {
+		setup := func(db *asyncdb.AsyncDB, keys int) error {
+			return workflows.SetupAsyncDBSimulatedTablesWorkflow(db, keys)
 		}
-		pgFactory, err := asyncdb.NewPgTableFactory(connString)
-		if err != nil {
-			panic("Failed to create PgTableFactory: " + err.Error())
+		configCombinations := getConfigCombinations(wfTypes, simTypes, parallelisms)
+		for _, config := range configCombinations {
+			wfType, simType, parallelism := config[0].(string), config[1].(string), config[2].(int)
+			runInstance(b, setup, -1, wfType, simType, parallelism, 0)
 		}
-		setup := func(db *asyncdb.AsyncDB, _ int) error {
-			return workflows.SetupAsyncDBWorkflow(db, pgFactory)
-		}
-		fun(b, setup)
 	})
 }
 

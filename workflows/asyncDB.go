@@ -42,6 +42,22 @@ func NewAsyncDBWorkflow(db *asyncdb.AsyncDB, l *log.Logger, simType string, keys
 	return &AsyncDBWorkflow{db, l, ctx, sim, simType, keys}
 }
 
+func SetupAsyncDBSimulatedTablesWorkflow(db *asyncdb.AsyncDB, _ int) error {
+	tables := []string{"Orders", "Items", "StockKeepingUnits", "Customers", "ItemOffers", "OrderPayments", "ItemOptions", "CustomerOffersUsage", "OrderTaxes"}
+	diskAccessTimeMs := 15
+	ctx, _ := db.Connect()
+
+	for _, table := range tables {
+		tbl := asyncdb.NewSimulatedTable(table, diskAccessTimeMs)
+		err := db.CreateTable(ctx, tbl)
+		if err != nil {
+			return err
+		}
+	}
+	err := db.Disconnect(ctx)
+	return err
+}
+
 func SetupAsyncDBInMemoryWorkflow(db *asyncdb.AsyncDB, keys int) error {
 	tables := []string{"Orders", "Items", "StockKeepingUnits", "Customers", "ItemOffers", "OrderPayments", "ItemOptions", "CustomerOffersUsage", "OrderTaxes"}
 	ctx, _ := db.Connect()

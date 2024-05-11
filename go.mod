@@ -3,7 +3,7 @@ module github.com/Volume999/BroadleafSimulation
 go 1.22.1
 
 require (
-	github.com/Volume999/AsyncDB v0.4.1-0.20240506124432-7553a8801c46
+	github.com/Volume999/AsyncDB v0.5.1-0.20240511100455-5945990de709
 	github.com/jackc/pgx/v5 v5.5.5
 )
 

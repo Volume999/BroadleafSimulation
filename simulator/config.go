@@ -6,6 +6,7 @@ const (
 	MaxOrderItems    = 20
 	MaxAppliedOffers = 10
 	MaxPayments      = 7
+	DefaultKeys      = 10000
 )
 
 type Config struct {
@@ -55,6 +56,9 @@ func RandomConfig() *Config {
 }
 
 func (c *Config) SetAccessKeys(keys int) {
+	if keys < 1 {
+		keys = DefaultKeys
+	}
 	accessKeys := TableAccessKeys{
 		Orders:              randomKeys(1, keys),
 		Items:               randomKeys(c.OrderItemsCnt, keys),
